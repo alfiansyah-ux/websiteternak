@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  name      String
+  role      String   @default("CUSTOMER")
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  livestocks    Livestock[]
+  expenses      Expense[]
+  products      Product[]
+  orders        Order[]
+  notifications Notification[]
+}
+
+model Livestock {
+  id                Int           @id @default(autoincrement())
+  farmerId          Int
+  type              String
+  age               Int           // in months
+  weight            Float         // in kg
+  healthCondition   String        @default("Healthy")
+  vaccinationStatus String        @default("Up to date")
+  entryDate         DateTime      @default(now())
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  farmer         User            @relation(fields: [farmerId], references: [id])
+  productions    Production[]
+  healthRecords  HealthRecord[]
+}
+
+model Production {
+  id          Int            @id @default(autoincrement())
+  livestockId Int
+  type        String
+  quantity    Float          // kg or pieces or liters
+  date        DateTime       @default(now())
+  createdAt   DateTime       @default(now())
+
+  livestock Livestock @relation(fields: [livestockId], references: [id])
+}
+
+model HealthRecord {
+  id          Int      @id @default(autoincrement())
+  livestockId Int
+  notes       String
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  livestock Livestock @relation(fields: [livestockId], references: [id])
+}
+
+model Expense {
+  id          Int             @id @default(autoincrement())
+  farmerId    Int
+  category    String
+  amount      Float
+  description String?
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+
+  farmer User @relation(fields: [farmerId], references: [id])
+}
+
+model Product {
+  id          Int         @id @default(autoincrement())
+  farmerId    Int
+  name        String
+  type        String
+  price       Float
+  stock       Int
+  description String?
+  imageUrl    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  farmer     User        @relation(fields: [farmerId], references: [id])
+  orderItems OrderItem[]
+}
+
+model Order {
+  id           Int         @id @default(autoincrement())
+  customerId   Int
+  totalAmount  Float
+  status       String @default("PENDING")
+  paymentProof String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  customer   User        @relation(fields: [customerId], references: [id])
+  orderItems OrderItem[]
+}
+
+model OrderItem {
+  id        Int   @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Float // price at the time of purchase
+
+  order   Order   @relation(fields: [orderId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+}
